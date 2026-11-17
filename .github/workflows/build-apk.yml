@@ -8,6 +8,10 @@ on:
 permissions:
   contents: write
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   android:
     runs-on: ubuntu-22.04
@@ -80,7 +84,7 @@ jobs:
           { echo "== env"; echo "HOME=$HOME"; ls ~/.local/share/godot/export_templates/ 2>&1; cat ~/.config/godot/editor_settings-4.3.tres 2>&1 | grep android; java -version 2>&1; echo "== log"; grep -v -E "EditorTheme|XR:|TextServer" build/export.log 2>&1; } > build/buildlog.txt || true
           B64=$(base64 -w0 build/buildlog.txt)
           URL="https://api.github.com/repos/${{ github.repository }}/contents/buildlog.txt"
-          SHA=$(curl -s -H "Authorization: Bearer $GH_TOKEN" "$URL" | grep -m1 '"sha"' | tr -dc 'a-f0-9')
+          SHA=$(curl -s -H "Authorization: Bearer $GH_TOKEN" "$URL" | grep -m1 '"sha"' | tr -dc 'a-f0-9' || true)
           curl -s -X PUT -H "Authorization: Bearer $GH_TOKEN" "$URL" -d "{\"message\":\"buildlog\",\"content\":\"$B64\",\"sha\":\"$SHA\"}" >/dev/null
 
       - name: Publicar APK como artefato
