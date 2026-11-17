@@ -21,6 +21,25 @@ jobs:
           mkdir -p ~/.local/share/godot/export_templates
           cp -r /root/.local/share/godot/export_templates/4.3.stable ~/.local/share/godot/export_templates/ 2>/dev/null || true
 
+      - name: Instalar Android SDK 34 (exigido pelo Godot 4.3)
+        run: |
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/lib/android-sdk}}"
+          echo "SDK=$SDK"; ls "$SDK" || true
+          SDKM="$(find / -name sdkmanager -type f 2>/dev/null | head -1)"
+          echo "sdkmanager=$SDKM"
+          if [ -z "$SDKM" ]; then
+            apt-get update -qq && apt-get install -y -qq unzip wget >/dev/null
+            mkdir -p "$SDK/cmdline-tools"
+            wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O /tmp/cmd.zip
+            unzip -q /tmp/cmd.zip -d /tmp/cmd
+            mkdir -p "$SDK/cmdline-tools/latest"
+            cp -r /tmp/cmd/cmdline-tools/* "$SDK/cmdline-tools/latest/"
+            SDKM="$SDK/cmdline-tools/latest/bin/sdkmanager"
+          fi
+          yes | "$SDKM" --sdk_root="$SDK" --licenses >/dev/null || true
+          "$SDKM" --sdk_root="$SDK" "platform-tools" "build-tools;34.0.0" "platforms;android-34" "cmdline-tools;latest"
+          ls "$SDK/build-tools" "$SDK/platforms"
+
       - name: Criar keystore de debug e configurar o editor
         run: |
           keytool -keyalg RSA -genkeypair -alias androiddebugkey -keypass android -keystore debug.keystore -storepass android -dname "CN=Android Debug,O=Android,C=US" -validity 9999 -deststoretype pkcs12
